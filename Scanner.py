@@ -6,12 +6,12 @@ class Scanner:
         self.data = data
 
 
-PUNCTUATION = "|/\\;()%:<>[]{}#$^&~='\"?,# "
+PUNCTUATION = "|/\\;*()%:<>[]{}#$^&~='\"?,# "
 
 # next : next -> next
 # return the first token of the given string `s` after splitting `s` using give regexpr
 def next(s):
-    return re.split(r'[ \|/\\;()%:<>[\]{}#$^&~=\'"?,# \s]\s*', s)[0]
+    return re.split(r'[ \|/\\;*()%:<>[\]{}#$^&~=\'"?,# \s]\s*', s)[0]
 
 
 # peek : scanner -> (or/c number string)

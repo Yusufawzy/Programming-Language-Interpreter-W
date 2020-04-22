@@ -1,11 +1,12 @@
 # Name: Yusuf Elnady
 # W2 --https://www.radford.edu/~itec380/2020spring-ibarland/Homeworks/W2.html
+# W4 --https://www.radford.edu/~itec380/2020spring-ibarland/Homeworks/W4.html
 # Python 3.7 - PyCharm 2020.1 (Professional Edition)
 from Scanner import *
 from numbers import Number
 
 '''
-  Expr       ::= Num | Paren | BinOp | IfNeg | IfOdd | id |  LetExpr
+  Expr       ::= Num | Paren | BinOp | IfNeg | IfOdd | id |  LetExpr | FuncExpr | FuncApplyExpr
   Paren      ::= | Expr |
   BinOp      ::= # Expr Op Expr }
   Op         ::= order-up | ah-shrimp | barnacles  | fish-paste
@@ -13,14 +14,19 @@ from numbers import Number
   IfOdd      ::= ahoy Expr me Expr money Expr
   id         ::= String
   LetExpr    ::= sweet Id mother of Expr pearl Expr
+  FuncExpr   ::= <^> Id * Expr                  interpretation: function-value; inspired by patrick star
+  FuncApplyExpr ::= aye aye Expr captain Expr   interpretation: call the function (which is the captain of its argument)
+
  An Expr is:
   - a number
   - Paren  ([Expr])
   - Binop  ([Expr] [Op] [Expr])
-  - IfNeg ([Expr] [Expr] [Expr])
-  - IfOdd  ([Expr] [Expr] [Expr]) #>>>W1
-  - LetExpr([String] [Expr] [Expr]) #>>>W2
-  - String #>>>W2 (id)
+  - IfNeg  ([Expr] [Expr] [Expr])
+  - IfOdd  ([Expr] [Expr] [Expr])       #>>>W1
+  - LetExpr([id] [Expr] [Expr])     #>>>W2
+  - String                              #>>>W2 
+  - FuncExpr([id] [Expr])
+  - FuncApplyExpr ([Expr] [Expr])
 '''
 
 OP_FUNCS = {'order-up': lambda x, y: y + x, 'ah-shrimp': lambda x, y: x - y, 'barnacles!': lambda x, y: x * y,
@@ -81,6 +87,28 @@ class LetExpr:
         return self.id == other.id and self.rhs == other.rhs and self.body == other.body
 
 
+# >>>W4
+class FuncExpr:
+    def __init__(self, param, body):
+        self.param = param
+        self.body = body
+
+    def __eq__(self, other):
+        return self.param == other.param and self.body == other.body
+
+
+# >>>W4
+class FuncApplyExpr:
+    def __init__(self, arg, func):
+        self.func = func
+        self.arg = arg
+
+    def __eq__(self, other):
+        return self.func == other.func and self.arg == other.arg
+
+    # (λ (x) (+ (* 3 x) 1)) written in W4: (^) x * ##x barnacles! 3} order-up 1}.
+
+
 '''
 Examples of Expr:
 - 34
@@ -115,6 +143,10 @@ def exprToString(e):
         return "ahoy " + exprToString(e.test) + " me " + exprToString(e.then) + " money " + exprToString(e.els)
     elif isinstance(e, LetExpr):  # >>>W2
         return "sweet " + exprToString(e.id) + " mother of " + exprToString(e.rhs) + " pearl " + exprToString(e.body)
+    elif isinstance(e, FuncExpr):  # >>>W4
+        return "(^) " + exprToString(e.param) + " * " + exprToString(e.body)
+    elif isinstance(e, FuncApplyExpr):  # >>>W4
+        return "aye aye " + exprToString(e.arg) + " captain " + exprToString(e.func)
     elif isinstance(e, str):  # id # >>>W1
         return e
     else:
@@ -167,13 +199,28 @@ def parse(s):
         return IfOdd(test, then, els)
     elif peek(s) == "sweet":  # >>>W2
         _ = pop(s)
-        id = parse(s)
+        id = pop(s)
         _ = pop(s)
         _ = pop(s)
         rhs = parse(s)
         _ = pop(s)
         body = parse(s)
         return LetExpr(id, rhs, body)
+    elif peek(s) == "(":  # >>>W4
+        _ = pop(s)
+        _ = pop(s)
+        _ = pop(s)
+        param = pop(s)
+        _ = pop(s)
+        body = parse(s)
+        return FuncExpr(param, body)
+    elif peek(s) == "aye":  # >>>W4
+        _ = pop(s)
+        _ = pop(s)
+        arg = parse(s)
+        _ = pop(s)
+        func = parse(s)
+        return FuncApplyExpr(arg, func)
     elif isinstance(peek(s), str):  # id #>>>W2
         return pop(s)
     else:
@@ -192,11 +239,18 @@ def eval(e):
     elif isinstance(e, IfNeg):
         return eval(e.then) if (eval(e.test) < 0) else eval(e.els)
     elif isinstance(e, IfOdd):  # >>>W1
-        return eval(e.then) if (isinstance(eval(e.test), int) and e.test % 2 != 0) else eval(e.els)
+        return eval(e.then) if (isinstance(eval(e.test), int) and eval(e.test) % 2 != 0) else eval(e.els)
     elif isinstance(e, LetExpr):  # >>>W2
         v0 = eval(e.rhs)
-        E1 = substitute(v0, e.id, e.body)
-        return eval(E1)
+        e1 = substitute(v0, e.id, e.body)
+        return eval(e1)
+    elif isinstance(e, FuncExpr):  # >>>W4
+        return e
+    elif isinstance(e, FuncApplyExpr):  # >>>W4
+        actualArg = eval(e.arg)
+        functionValue = eval(e.func)
+        e1 = substitute(actualArg, functionValue.param, functionValue.body)
+        return eval(e1)
     else:
         raise TypeError('eval "unknown type of expr: ' + str(e))
 
@@ -211,7 +265,7 @@ def evalBinOP(op, left, right):
 
 
 # substitute-> Number, id, Expr -> Expr
-# substitute `v0` for all occurrences of `id` inside the tree `e`
+# return the tree `e` with any free occurrences of `idd` replaced with `v0`.
 def substitute(v0, idd, e):  # >>>W2
     if isinstance(e, Number):
         return e
@@ -226,15 +280,20 @@ def substitute(v0, idd, e):  # >>>W2
     elif isinstance(e, str):  # >>>W2
         return v0 if idd == e else e
     elif isinstance(e, LetExpr):  # >>>W2
-        return LetExpr(substitute(v0, idd, e.id), substitute(v0, idd, e.rhs), substitute(v0, idd, e.body))
+        return LetExpr(e.id, substitute(v0, idd, e.rhs),
+                       e.body if (e.id == idd) else substitute(v0, idd, e.body))  # >>>W3
+    elif isinstance(e, FuncExpr):  # >>>W4
+        return FuncExpr(e.param, e.body if idd == e.param else substitute(v0, idd, e.body))
+    elif isinstance(e, FuncApplyExpr):  # >>>W4
+        return FuncApplyExpr(substitute(v0, idd, e.arg), substitute(v0, idd, e.func))
     else:
         raise TypeError('eval "unknown type of expr: ' + str(e))
 
-
-# print(eval(stringToExpr("ahoy 2.5 me 7.5 money 44")))
+# exprToString : Expr -> string
 # stringToExpr : string -> Expr
 # parse : scanner -> Expr
 # eval : Expr -> Num
+# substitute-> Number, id, Expr -> Expr
 
 
 # idd = Scanner("hi23.4!blaha#b|c!d-e")
@@ -242,3 +301,7 @@ def substitute(v0, idd, e):  # >>>W2
 while idd.data : 
     print(pop(idd)) 
 '''
+
+s2 =  "aye aye 3 captain sweet makeAdder           mother of  (^) n *   (^) m * # n order-up m }             pearl aye aye 4 captain makeAdder   "
+s = "sweet      tripleAndInc mother of  (^) x * ##x barnacles! y} order-up 1} pearl      aye aye 5 captain tripleAndInc"
+

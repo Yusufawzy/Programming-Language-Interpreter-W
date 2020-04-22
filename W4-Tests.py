@@ -1,4 +1,4 @@
-from W2 import *
+from W4 import *
 import unittest
 
 
@@ -146,31 +146,117 @@ class TestStringMethods(unittest.TestCase):
         self.assertEqual(eval(substitute(9, "x", stringToExpr("x"))), 9)
         self.assertEqual(eval(substitute(7, "z", stringToExpr("#4 ah-shrimp z}"))), -3)
         self.assertEqual(eval(substitute(7, "z", stringToExpr("sweet x mother of z pearl #x fish-paste z}"))), 0)
-        self.assertEqual(eval(stringToExpr("sweet ABC mother of sweet x mother of 100 pearl #x ah-shrimp 7} pearl |#ABC order-up .01}|")),93.01)
+        self.assertEqual(eval(
+            stringToExpr("sweet ABC mother of sweet x mother of 100 pearl #x ah-shrimp 7} pearl |#ABC order-up .01}|")),
+            93.01)
 
-        self.assertEqual(substitute(eval(stringToExpr("sweet x mother of 100 pearl #x ah-shrimp x}")), "ABC",stringToExpr("|||#ABC order-up .01}|||")),
+        self.assertEqual(substitute(eval(stringToExpr("sweet x mother of 100 pearl #x ah-shrimp x}")), "ABC",
+                                    stringToExpr("|||#ABC order-up .01}|||")),
                          stringToExpr("|||#0 order-up 0.01}|||"))
 
-        self.assertEqual(exprToString( stringToExpr("sweet x mother of z pearl #x fish-paste z}")),
+        self.assertEqual(exprToString(stringToExpr("sweet x mother of z pearl #x fish-paste z}")),
                          "sweet x mother of z pearl #x fish-paste z}")
-        self.assertEqual(exprToString(stringToExpr("sweet x mother of 7 pearl #4 ah-shrimp z}")),"sweet x mother of 7 pearl #4 ah-shrimp z}")
-        self.assertEqual(exprToString(stringToExpr("sweet ABC mother of sweet x mother of 100 pearl #x ah-shrimp 7} pearl |#ABC order-up .01}|")),
-                         "sweet ABC mother of sweet x mother of 100 pearl #x ah-shrimp 7} pearl |#ABC order-up 0.01}|")
-        self.assertEqual(stringToExpr("sweet ABC mother of sweet x mother of 100 pearl #x ah-shrimp x} pearl |#ABC order-up .01}|"),
-                         LetExpr("ABC",LetExpr("x",100,Binop("x","ah-shrimp","x")),Paren(Binop("ABC","order-up",0.01))))
+        self.assertEqual(exprToString(stringToExpr("sweet x mother of 7 pearl #4 ah-shrimp z}")),
+                         "sweet x mother of 7 pearl #4 ah-shrimp z}")
+        self.assertEqual(exprToString(
+            stringToExpr("sweet ABC mother of sweet x mother of 100 pearl #x ah-shrimp 7} pearl |#ABC order-up .01}|")),
+            "sweet ABC mother of sweet x mother of 100 pearl #x ah-shrimp 7} pearl |#ABC order-up 0.01}|")
+        self.assertEqual(
+            stringToExpr("sweet ABC mother of sweet x mother of 100 pearl #x ah-shrimp x} pearl |#ABC order-up .01}|"),
+            LetExpr("ABC", LetExpr("x", 100, Binop("x", "ah-shrimp", "x")), Paren(Binop("ABC", "order-up", 0.01))))
 
         an_id = "hi23.4!blaha"
         self.assertEqual(parse(Scanner(an_id)), "hi23.4!blaha")
         self.assertEqual(exprToString(stringToExpr(an_id)), "hi23.4!blaha")
 
+    def test_W3(self):
+        self.assertEqual(eval(stringToExpr("sweet x mother of 3 pearl sweet x mother of 5 pearl #x order-up 3}")), 8)
+        self.assertEqual(eval(stringToExpr(
+            "sweet x mother of 3 pearl |sweet y mother of 4 pearl #x order-up |sweet x mother of 5 pearl #x order-up y}|}|")),
+            (3 + (5 + 4)))
+        self.assertEqual(substitute(3, "x", stringToExpr(
+            "|sweet y mother of 4 pearl #x order-up |sweet x mother of 5 pearl #x order-up y}|}| ")),
+                         stringToExpr(
+                             "|sweet y mother of 4 pearl #3 order-up |sweet x mother of 5 pearl #x order-up y}|}| "))
+        self.assertEqual(
+            exprToString(substitute(5, "x", stringToExpr("sweet x mother of #x order-up 1} pearl #x order-up 2}"))),
+            "sweet x mother of #5 order-up 1} pearl #x order-up 2}")
+        self.assertEqual(exprToString(substitute(5, "x", stringToExpr(
+            "sweet y mother of 3 pearl #sweet x mother of y pearl #x order-up y} order-up x}"))),
+                         "sweet y mother of 3 pearl #sweet x mother of y pearl #x order-up y} order-up 5}")
+        self.assertEqual(
+            exprToString(substitute(5, "x", stringToExpr("sweet x mother of #x order-up 1} pearl #x order-up 2}"))),
+            "sweet x mother of #5 order-up 1} pearl #x order-up 2}")
 
+        self.assertEqual(eval(stringToExpr(
+            "sweet x mother of 3 pearl |sweet y mother of 4 pearl |#x order-up sweet x mother of 5 pearl #x order-up y}}||")),
+            12)
+        self.assertEqual(eval(stringToExpr("sweet y mother of 3 pearl sweet x mother of 5 pearl #x order-up y}")), 8)
+        self.assertEqual(eval(stringToExpr(
+            "sweet x mother of 3 pearl |sweet y mother of 4 pearl |#x order-up sweet x mother of 5 pearl #x order-up y}}||")),
+            12)
+        self.assertEqual(eval(stringToExpr(
+            "sweet x mother of 5 pearl sweet y mother of 3 pearl #sweet x mother of y pearl #x order-up y} order-up x}")),
+            11)
+        self.assertEqual(
+            eval(stringToExpr("sweet x mother of 5 pearl sweet x mother of #x order-up 1} pearl #x order-up 2}")), 8)
+        '''
+        Problem (1) in HW9 : 
+        sweet x mother of 3 pearl |sweet y mother of 4 pearl |#x order-up sweet x mother of 5 pearl #x order-up y}}||
+        ⇒ |sweet y mother of 4 pearl |#3 order-up sweet x mother of 5 pearl #x order-up y}}||
+        ⇒ ||#3 order-up sweet x mother of 5 pearl #x order-up 4}}||
+        ⇒ ||#3 order-up #5 order-up 4}}||
+        ⇒ 12
+        Complete the blanks in a similar way, below:
+        (a)⇒ sweet y mother of 3 pearl sweet x mother of 5 pearl #x order-up y}
+        ⇒ sweet x mother of 5 pearl #x order-up 3}                                            
+        ⇒ #5 order-up 3}                           
+        ⇒ 8
+        (b)⇒ sweet y mother of 3 pearl sweet x mother of y pearl #x order-up y}
+        ⇒ sweet x mother of 3 pearl #x order-up 3}                                                                                                                       
+        ⇒ #3 order-up 3}                                         
+        ⇒ 6
+        (c)⇒ sweet x mother of 5 pearl sweet y mother of 3 pearl #sweet x mother of y pearl #x order-up y} order-up x}
+        ⇒ sweet y mother of 3 pearl #sweet x mother of y pearl #x order-up y} order-up 5}                                                                                                                                                                                                                                           
+        ⇒ #sweet x mother of 3 pearl #x order-up 3} order-up 5}                                                                                                                                                              
+        ⇒ ##3 order-up 3} order-up 5}                                                                                
+        ⇒ #6 order-up 5}                                          
+        ⇒ 11
+        (d)⇒ sweet x mother of 5 pearl sweet x mother of #x order-up 1} pearl #x order-up 2}
+        ⇒ sweet x mother of #5 order-up 1} pearl #x order-up 2}
+        ⇒ sweet x mother of 6 pearl #x order-up 2}
+        ⇒ #6 order-up 2}
+        ⇒ 8  
+        '''
+        self.assertEqual(exprToString(substitute(3, "y", stringToExpr("#y ah-shrimp 3}"))), "#3 ah-shrimp 3}")
+        self.assertEqual(exprToString(
+            substitute("ABC", 3, stringToExpr(
+                "sweet ABC mother of sweet ABC mother of 100 pearl #ABC ah-shrimp ABC} pearl |#ABC order-up .01}|")))
+            , "sweet ABC mother of sweet ABC mother of 100 pearl #ABC ah-shrimp ABC} pearl |#ABC order-up 0.01}|")
 
-
+    def test_W4(self):
+        self.assertEqual(eval(stringToExpr("aye aye 5 captain (^) x * ##x barnacles! 3} order-up 1} ")), 16)
+        self.assertEqual(eval(stringToExpr(
+            "sweet tripleAndInc mother of  (^) x * ##x barnacles! 3# order-up 1} pearl aye aye 5 captain tripleAndInc }")),16)
+        self.assertEqual(exprToString(stringToExpr("aye aye 5 captain (^) x * ##x barnacles! 3} order-up 1} ")),
+                         "aye aye 5 captain (^) x * ##x barnacles! 3} order-up 1}")
+        self.assertEqual((exprToString(stringToExpr( "sweet makeAdder           mother of  (^) m *  # n order-up m }             pearl aye aye 3 captain makeAdder  "))),
+                         "sweet makeAdder mother of (^) m * #n order-up m} pearl aye aye 3 captain makeAdder")
+        # i - A constant function that always returns (say) 17.
+        "(^) x * 17"
+        self.assertEqual(eval(stringToExpr("aye aye 111 captain (^) x * 17")), 17)
+        # ii - The function sqr, which squares its input;
+        "sweet sqr mother of (^) x * # x barnacles! x } pearl  ... "
+        # iii - the factorial function, written in W4 using a LetExpr with body “…” as in the previous example.
+        "sweet factorial mother of " \
+        "               (^) x * # x ah-shrimp  |aye aye # x ah-shrimp 1 } captain factorial| pearl ... "    "x * |func(x-1)|"
+        # iv -
+        s1 = '''sweet makeAdder mother of (^) n * (^) m * #n order-up m} pearl aye aye 3 captain makeAdder'''# ((make-adder 3) 4)
+        s2 = '''aye aye 4 captain sweet makeAdder mother of (^) n * (^) m * #n order-up m} pearl aye aye 3 captain makeAdder'''  # ((make-adder 3) 4)
+        self.assertEqual(exprToString(eval(stringToExpr(s1))),"(^) m * #3 order-up m}")
+        self.assertEqual(eval(stringToExpr(s2)),7)
 if __name__ == '__main__':
     unittest.main()
-
-
-
 
 # def test_afunction_throws_exception(self):
 # self.assertRaises(ExpectedException, afunction, arg1, arg2)
